@@ -12,7 +12,7 @@ public class FuzzyPatrol : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
-        PublicDependencyModuleNames.AddRange(new string[] { "StateMachine", "FuzzyLibrary" });
+        PublicDependencyModuleNames.AddRange(new string[] { "FuzzyLibrary" });
 
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
