@@ -3,6 +3,7 @@ DerivedDataCache
 Intermediate
 Saved
 .vscode
+Plugins/FuzzyLibrary
 .vs
 *.VC.db
 *.opensdf
