@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enemies/Enemy.h"
-#include "BaseEnemy.generated.h"
+#include "Enemies/DefaultEnemy.h"
+#include "VisibleEnemy.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FUZZYPATROL_API ABaseEnemy : public AEnemy
+class FUZZYPATROL_API AVisibleEnemy : public ADefaultEnemy
 {
 	GENERATED_BODY()
 	
