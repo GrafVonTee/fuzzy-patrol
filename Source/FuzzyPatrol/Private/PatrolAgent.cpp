@@ -6,6 +6,7 @@
 #include "AgentGameplayTags.h"
 #include "GameplayTagContainer.h"
 #include "GameplayTagsManager.h"
+#include "Math/UnrealMathUtility.h"
 
 // Sets default values
 APatrolAgent::APatrolAgent()
@@ -70,6 +71,30 @@ void APatrolAgent::Tick(float DeltaTime)
 void APatrolAgent::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+}
+
+void APatrolAgent::IncreaseDanger(int Value)
+{
+	CurrentDangerLevel = FMath::Clamp(CurrentDangerLevel + Value, 0, MaxDangerLevel);
+
+}
+
+void APatrolAgent::DecreaseDanger(int Value)
+{
+	CurrentDangerLevel = FMath::Clamp(CurrentDangerLevel - Value, 0, MaxDangerLevel);
+
+}
+
+void APatrolAgent::QuenchThurst(int Value)
+{
+	CurrentThurstLevel = FMath::Clamp(CurrentThurstLevel - Value, 0, MaxThurstLevel);
+
+}
+
+void APatrolAgent::RaiseThurst(int Value)
+{
+	CurrentThurstLevel = FMath::Clamp(CurrentThurstLevel + Value, 0, MaxThurstLevel);
 
 }
 

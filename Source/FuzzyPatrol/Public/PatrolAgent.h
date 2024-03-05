@@ -40,6 +40,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Thurst")
 	int MaxThurstLevel = 150;
 
+	/** Enemy Detecting Level */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy Detecting")
+	int CurrentDetectingLevel = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy Detecting")
+	int MaxDetectingLevel = 150;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -51,5 +58,16 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Danger")
+	void IncreaseDanger(int Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Danger")
+	void DecreaseDanger(int Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Thurst")
+	void QuenchThurst(int Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Thurst")
+	void RaiseThurst(int Value);
 
 };
