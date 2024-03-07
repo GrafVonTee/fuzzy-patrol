@@ -20,6 +20,9 @@ APatrolAgent::APatrolAgent()
 	StateMachine->StateTag = StateMachine->InitialStateTag;
 	StateMachine->StateHistoryLength = 5;
 
+	ReceivingComponent = CreateDefaultSubobject<UReceivingComponent>("ReceivingComponent");
+	ReceivingComponent->OnValueReceivedDelegate.AddUniqueDynamic(this, &APatrolAgent::QuenchThurst);
+
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
@@ -84,17 +87,65 @@ void APatrolAgent::UpdateObservedDangerLevel(int32 CurrentLevel)
 {
 	ObservedDangerLevel = FMath::Clamp(CurrentLevel, 0, MaximumPermissibleDangerLevel);
 
+	if (ObservedDangerLevel == MaximumPermissibleDangerLevel)
+	{
+		Die();
+
+	}
+
 }
 
 void APatrolAgent::QuenchThurst(int32 Value)
 {
 	CurrentThurstLevel = FMath::Clamp(CurrentThurstLevel - Value, 0, MaximumThurstLevel);
 
+	if (OnThurstLevelChangedDelegate.IsBound())
+	{
+		OnThurstLevelChangedDelegate.Broadcast(CurrentThurstLevel);
+
+	}
+	
 }
 
 void APatrolAgent::RaiseThurst(int32 Value)
 {
 	CurrentThurstLevel = FMath::Clamp(CurrentThurstLevel + Value, 0, MaximumThurstLevel);
+
+	if (OnThurstLevelChangedDelegate.IsBound())
+	{
+		OnThurstLevelChangedDelegate.Broadcast(CurrentThurstLevel);
+
+	}
+
+	if (CurrentThurstLevel == MaximumThurstLevel)
+	{
+		Die();
+
+	}
+
+}
+
+void APatrolAgent::RaiseDetectingLevel(int32 Value)
+{
+	CurrentDetectingLevel = FMath::Clamp(CurrentDetectingLevel + Value, 0, MaximumDetectingLevel);
+
+	if (OnDetectingLevelChangedDelegate.IsBound())
+	{
+		OnDetectingLevelChangedDelegate.Broadcast(CurrentDetectingLevel);
+
+	}
+
+}
+
+void APatrolAgent::ResetDetectingLevel()
+{
+	CurrentDetectingLevel = 0;
+
+	if (OnDetectingLevelChangedDelegate.IsBound())
+	{
+		OnDetectingLevelChangedDelegate.Broadcast(CurrentDetectingLevel);
+
+	}
 
 }
 

@@ -5,7 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "DangerDetector.h"
+#include "ReceivingComponent.h"
 #include "PatrolAgent.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThurstLevelChangedSignature, int32, CurrentThurstLevel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDetectingLevelChangedSignature, int32, CurrentDetectingLevel);
 
 UCLASS()
 class FUZZYPATROL_API APatrolAgent : public ACharacter
@@ -27,21 +31,40 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Meshes")
 	class UStaticMeshComponent* BodyCube;
 
-	/** Danger Level */
+	/** Speed Section */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Speed")
+	float CurrentSpeed = 150.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Speed")
+	float RushSpeed = 300.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Speed")
+	float QuietSpeed = 150.0f;
+
+	/** Danger Level Section */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Danger Level")
 	int32 ObservedDangerLevel = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Danger Level")
 	int32 MaximumPermissibleDangerLevel = 1000;
 
-	/** Thurst Level */
+	/** Thurst Level Section */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Thurst")
+	class UReceivingComponent* ReceivingComponent;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnThurstLevelChangedSignature OnThurstLevelChangedDelegate;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Thurst")
 	int32 CurrentThurstLevel = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Thurst")
 	int32 MaximumThurstLevel = 150;
 
-	/** Enemy Detecting Level */
+	/** Enemy Detecting Level Section */
+	UPROPERTY(BlueprintAssignable)
+	FOnDetectingLevelChangedSignature OnDetectingLevelChangedDelegate;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy Detecting")
 	int32 CurrentDetectingLevel = 0;
 
@@ -67,6 +90,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Thurst")
 	void RaiseThurst(int32 Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Detecting")
+	void RaiseDetectingLevel(int32 Value);
+
+	UFUNCTION(BlueprintCallable, Category = "Detecting")
+	void ResetDetectingLevel();
 	
 	UFUNCTION(BlueprintCallable)
 	void Die();
