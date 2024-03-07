@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "DangerDetector.h"
 #include "PatrolAgent.generated.h"
 
 UCLASS()
@@ -27,25 +28,25 @@ public:
 	class UStaticMeshComponent* BodyCube;
 
 	/** Danger Level */
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Danger")
-	int CurrentDangerLevel = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Danger Level")
+	int32 ObservedDangerLevel = 0;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Danger")
-	int MaxDangerLevel = 150;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Danger Level")
+	int32 MaximumPermissibleDangerLevel = 1000;
 
 	/** Thurst Level */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Thurst")
-	int CurrentThurstLevel = 0;
+	int32 CurrentThurstLevel = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Thurst")
-	int MaxThurstLevel = 150;
+	int32 MaximumThurstLevel = 150;
 
 	/** Enemy Detecting Level */
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy Detecting")
-	int CurrentDetectingLevel = 0;
+	int32 CurrentDetectingLevel = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy Detecting")
-	int MaxDetectingLevel = 150;
+	int32 MaximumDetectingLevel = 150;
 
 protected:
 	// Called when the game starts or when spawned
@@ -58,16 +59,16 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Danger")
-	void IncreaseDanger(int Value);
-
-	UFUNCTION(BlueprintCallable, Category = "Danger")
-	void DecreaseDanger(int Value);
+	UFUNCTION(BlueprintCallable, Category = "Danger Level")
+	void UpdateObservedDangerLevel(int32 CurrentLevel);
 
 	UFUNCTION(BlueprintCallable, Category = "Thurst")
-	void QuenchThurst(int Value);
+	void QuenchThurst(int32 Value);
 
 	UFUNCTION(BlueprintCallable, Category = "Thurst")
-	void RaiseThurst(int Value);
+	void RaiseThurst(int32 Value);
+	
+	UFUNCTION(BlueprintCallable)
+	void Die();
 
 };

@@ -6,6 +6,7 @@
 #include "AgentGameplayTags.h"
 #include "GameplayTagContainer.h"
 #include "GameplayTagsManager.h"
+#include "Kismet/GameplayStatics.h"
 #include "Math/UnrealMathUtility.h"
 
 // Sets default values
@@ -58,6 +59,11 @@ void APatrolAgent::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ADangerDetector::StaticClass());
+	ADangerDetector* DangerDetector = Cast<ADangerDetector>(FoundActor);
+	DangerDetector->OnLevelChangedDelegate.AddUniqueDynamic(this,
+		&APatrolAgent::UpdateObservedDangerLevel);
+
 }
 
 // Called every frame
@@ -74,27 +80,27 @@ void APatrolAgent::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 }
 
-void APatrolAgent::IncreaseDanger(int Value)
+void APatrolAgent::UpdateObservedDangerLevel(int32 CurrentLevel)
 {
-	CurrentDangerLevel = FMath::Clamp(CurrentDangerLevel + Value, 0, MaxDangerLevel);
+	ObservedDangerLevel = FMath::Clamp(CurrentLevel, 0, MaximumPermissibleDangerLevel);
 
 }
 
-void APatrolAgent::DecreaseDanger(int Value)
+void APatrolAgent::QuenchThurst(int32 Value)
 {
-	CurrentDangerLevel = FMath::Clamp(CurrentDangerLevel - Value, 0, MaxDangerLevel);
+	CurrentThurstLevel = FMath::Clamp(CurrentThurstLevel - Value, 0, MaximumThurstLevel);
 
 }
 
-void APatrolAgent::QuenchThurst(int Value)
+void APatrolAgent::RaiseThurst(int32 Value)
 {
-	CurrentThurstLevel = FMath::Clamp(CurrentThurstLevel - Value, 0, MaxThurstLevel);
+	CurrentThurstLevel = FMath::Clamp(CurrentThurstLevel + Value, 0, MaximumThurstLevel);
 
 }
 
-void APatrolAgent::RaiseThurst(int Value)
+void APatrolAgent::Die()
 {
-	CurrentThurstLevel = FMath::Clamp(CurrentThurstLevel + Value, 0, MaxThurstLevel);
+	Destroy();
 
 }
 

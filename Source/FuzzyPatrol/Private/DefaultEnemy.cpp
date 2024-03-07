@@ -1,7 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Enemies/DefaultEnemy.h"
+#include "DefaultEnemy.h"
+#include "DangerDetector.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 
@@ -44,6 +46,8 @@ ADefaultEnemy::ADefaultEnemy()
 
 	}
 
+	CurrentHealth = MaximumHealth;
+
 }
 
 // Called when the game starts or when spawned
@@ -51,6 +55,13 @@ void ADefaultEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), ADangerDetector::StaticClass());
+	DangerDetector = Cast<ADangerDetector>(FoundActor);
+
+	ResetRandomPatrolTimer();
+	ResetDangerRaisingTimer();
+	MoveToRandom();
+
 }
 
 // Called every frame
@@ -64,6 +75,65 @@ void ADefaultEnemy::Tick(float DeltaTime)
 void ADefaultEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+}
+
+void ADefaultEnemy::ResetRandomPatrolTimer()
+{
+	GetWorldTimerManager().SetTimer(RandomPatrolTimerHandle, this, &ADefaultEnemy::MoveToRandom, PatrolPeriod, true);
+
+}
+
+void ADefaultEnemy::ClearRandomPatrolTimer()
+{
+	GetWorldTimerManager().ClearTimer(RandomPatrolTimerHandle);
+
+}
+
+void ADefaultEnemy::ResetDangerRaisingTimer()
+{
+	GetWorldTimerManager().SetTimer(DangerRaisingTimerHandle, this, &ADefaultEnemy::RaiseDanger, 1, true);
+
+}
+
+void ADefaultEnemy::ClearDangerRaisingTimer()
+{
+	GetWorldTimerManager().ClearTimer(DangerRaisingTimerHandle);
+
+}
+
+void ADefaultEnemy::RaiseDanger()
+{
+	DangerDetector->RaiseLevel(DangerRaisingValue);
+
+}
+
+void ADefaultEnemy::LowerDangerAsReward()
+{
+	DangerDetector->LowerLevel(RewardByDeath);
+
+}
+
+void ADefaultEnemy::ReceiveDamage(int32 DamagePoints)
+{
+	CurrentHealth = FMath::Clamp(CurrentHealth - DamagePoints, 0, MaximumHealth);
+	
+	if (CurrentHealth == 0)
+	{
+		Die();
+
+	}
+
+}
+
+void ADefaultEnemy::Die()
+{
+	ClearRandomPatrolTimer();
+	ClearDangerRaisingTimer();
+
+	LowerDangerAsReward();
+
+	Destroy();
 
 }
 
