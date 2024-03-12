@@ -2,26 +2,35 @@
 
 
 #include "PatrolAgent.h"
-#include "StateMachineComponent.h"
 #include "AgentGameplayTags.h"
-#include "GameplayTagContainer.h"
-#include "GameplayTagsManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameplayTagContainer.h"
 #include "Math/UnrealMathUtility.h"
+#include "Perception/PawnSensingComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 APatrolAgent::APatrolAgent()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	StateMachine = CreateDefaultSubobject<UStateMachineComponent>("StateMachine");
 	StateMachine->InitialStateTag = AgentGameplayTags::NonTeaState_NonBattleState_Wait;
-	StateMachine->StateTag = StateMachine->InitialStateTag;
+	StateMachine->InitialStateTag;
 	StateMachine->StateHistoryLength = 5;
+	StateMachine->InitStateDelegate.AddUniqueDynamic(this, &APatrolAgent::OnInitState);
 
 	ReceivingComponent = CreateDefaultSubobject<UReceivingComponent>("ReceivingComponent");
 	ReceivingComponent->OnValueReceivedDelegate.AddUniqueDynamic(this, &APatrolAgent::QuenchThurst);
+
+	ThurstAccumulativeComponent = CreateDefaultSubobject<UReceivingComponent>("ThurstAccumulativeComponent");
+	ThurstAccumulativeComponent->OnValueReceivedDelegate.AddUniqueDynamic(this, &APatrolAgent::RaiseThurst);
+
+	PawnSensing = CreateDefaultSubobject<UPawnSensingComponent>("PawnSensing");
+	PawnSensing->bOnlySensePlayers = false;
+	PawnSensing->bSeePawns = true;
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -83,6 +92,81 @@ void APatrolAgent::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 }
 
+void APatrolAgent::OnInitState(const FGameplayTag& State)
+{
+	ThurstAccumulativeComponent->DisableReceiving();
+
+	if (State.MatchesTag(AgentGameplayTags::TeaState))
+	{
+		DisableDetecting();
+	}
+	else
+	{
+		EnableDetecting();
+	}
+
+	if (State.MatchesTag(AgentGameplayTags::TeaState_Wait))
+	{
+		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, WaitThurstValue);
+		SetSpeed(0);
+
+	}
+	else if (State.MatchesTag(AgentGameplayTags::TeaState_Rush))
+	{
+		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, RushThurstValue);
+		SetSpeed(RushSpeed);
+
+	}
+	else if (State.MatchesTag(AgentGameplayTags::TeaState_Walk))
+	{
+		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, WalkThurstValue);
+		SetSpeed(QuietSpeed);
+
+	}
+	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_BattleState_Chase))
+	{
+		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, RushThurstValue);
+		SetSpeed(RushSpeed);
+
+	}
+	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_BattleState_Attack))
+	{
+		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, AttackThurstValue);
+		SetSpeed(0);
+
+	}
+	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_NonBattleState_Wait))
+	{
+		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, WaitThurstValue);
+		SetSpeed(0);
+
+	}
+	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_NonBattleState_Patrol))
+	{
+		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, WalkThurstValue);
+		SetSpeed(QuietSpeed);
+
+	}
+	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_NonBattleState_Rush))
+	{
+		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, RushThurstValue);
+		SetSpeed(RushSpeed);
+
+	}
+	else
+	{
+		return;
+	}
+
+}
+
+void APatrolAgent::SetSpeed(float NewSpeed)
+{
+	CurrentSpeed = NewSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = CurrentSpeed;
+
+}
+
 void APatrolAgent::UpdateObservedDangerLevel(int32 CurrentLevel)
 {
 	ObservedDangerLevel = FMath::Clamp(CurrentLevel, 0, MaximumPermissibleDangerLevel);
@@ -104,7 +188,7 @@ void APatrolAgent::QuenchThurst(int32 Value)
 		OnThurstLevelChangedDelegate.Broadcast(CurrentThurstLevel);
 
 	}
-	
+
 }
 
 void APatrolAgent::RaiseThurst(int32 Value)
@@ -125,32 +209,37 @@ void APatrolAgent::RaiseThurst(int32 Value)
 
 }
 
-void APatrolAgent::RaiseDetectingLevel(int32 Value)
+void APatrolAgent::SetDetectedEnemy(ADefaultEnemy* Enemy)
 {
-	CurrentDetectingLevel = FMath::Clamp(CurrentDetectingLevel + Value, 0, MaximumDetectingLevel);
+	CurrentDetectedEnemy = Enemy;
 
 	if (OnDetectingLevelChangedDelegate.IsBound())
 	{
-		OnDetectingLevelChangedDelegate.Broadcast(CurrentDetectingLevel);
+		OnDetectingLevelChangedDelegate.Broadcast(CurrentDetectedEnemy);
 
 	}
+}
+
+void APatrolAgent::EnableDetecting()
+{
+	PawnSensing->SetSensingUpdatesEnabled(true);
 
 }
 
-void APatrolAgent::ResetDetectingLevel()
+void APatrolAgent::DisableDetecting()
 {
-	CurrentDetectingLevel = 0;
-
-	if (OnDetectingLevelChangedDelegate.IsBound())
-	{
-		OnDetectingLevelChangedDelegate.Broadcast(CurrentDetectingLevel);
-
-	}
+	PawnSensing->SetSensingUpdatesEnabled(false);
+	CurrentDetectedEnemy = nullptr;
 
 }
 
 void APatrolAgent::Die()
 {
+	if (OnDeathDelegate.IsBound())
+	{
+		OnDeathDelegate.Broadcast();
+	}
+
 	Destroy();
 
 }

@@ -5,7 +5,10 @@
 
 namespace AgentGameplayTags
 {
-	UE_DEFINE_GAMEPLAY_TAG(TeaReceivingState, "TeaReceivingState");
+	UE_DEFINE_GAMEPLAY_TAG(TeaState, "TeaState");
+	UE_DEFINE_GAMEPLAY_TAG(TeaState_Wait, "TeaState.Wait");
+	UE_DEFINE_GAMEPLAY_TAG(TeaState_Walk, "TeaState.Walk");
+	UE_DEFINE_GAMEPLAY_TAG(TeaState_Rush, "TeaState.Rush");
 
 	UE_DEFINE_GAMEPLAY_TAG(NonTeaState, "NonTeaState");
 
