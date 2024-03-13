@@ -101,11 +101,17 @@ public:
 
 
 	/** Attack Section */
+	UPROPERTY()
+	FTimerHandle AttackTimer;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	float AttackRate = 0.3;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
 	int32 AttackPower = 3;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
-	float AttackRadius = 30.0f;
+	float AttackRadius = 100.0f;
 
 
 	/** Patrol Section */
@@ -197,6 +203,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Patrol")
 	void SetNewPatrolTargetLocation();
+
+
+	/** Attack Section */
+	UFUNCTION(BlueprintCallable, Category = "Attack")
+	void BeginAttack();
+
+	UFUNCTION(BlueprintCallable, Category = "Attack")
+	void StopAttack();
 
 
 	/** Moving Section */

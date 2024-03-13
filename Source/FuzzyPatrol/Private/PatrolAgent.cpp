@@ -19,7 +19,7 @@ APatrolAgent::APatrolAgent()
 
 	StateMachine = CreateDefaultSubobject<UStateMachineComponent>("StateMachine");
 	StateMachine->InitialStateTag = AgentGameplayTags::NonTeaState_NonBattleState_Wait;
-	StateMachine->StateHistoryLength = 5;
+	StateMachine->StateHistoryLength = 3;
 	StateMachine->InitStateDelegate.AddUniqueDynamic(this, &APatrolAgent::OnInitState);
 
 	ReceivingComponent = CreateDefaultSubobject<UReceivingComponent>("ReceivingComponent");
@@ -97,6 +97,7 @@ void APatrolAgent::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 void APatrolAgent::OnInitState(const FGameplayTag& State)
 {
 	ThurstAccumulativeComponent->DisableReceiving();
+	StopAttack();
 
 	if (State.MatchesTag(AgentGameplayTags::TeaState))
 	{
@@ -155,6 +156,7 @@ void APatrolAgent::OnInitState(const FGameplayTag& State)
 	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_BattleState_Attack))
 	{
 		AttackDetectedEnemy();
+		BeginAttack();
 
 	}
 	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_NonBattleState_Wait))
@@ -314,6 +316,18 @@ void APatrolAgent::SetNewPatrolTargetLocation()
 			break;
 		}
 	}
+}
+
+void APatrolAgent::BeginAttack()
+{
+	GetWorldTimerManager().SetTimer(AttackTimer, this, &APatrolAgent::AttackDetectedEnemy, AttackRate, true);
+
+}
+
+void APatrolAgent::StopAttack()
+{
+	GetWorldTimerManager().ClearTimer(AttackTimer);
+
 }
 
 void APatrolAgent::ResetMovingTimer()

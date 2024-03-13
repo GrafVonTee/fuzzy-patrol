@@ -59,8 +59,6 @@ void APatrolAIController::BeginPlay()
 	CentroidDefuzzification = NewObject<UCentroidDefuzzification>();
 	LargeMaxDefuzzification = NewObject<ULargeMaxDefuzzification>();
 
-	RuleParser = NewObject<URuleParser>();
-
 	SetThurstVariable();
 	SetDangerLevelVariable();
 	SetActionVariable();
@@ -71,6 +69,9 @@ void APatrolAIController::BeginPlay()
 	SetRushStateDuration();
 
 	SetActionTimings();
+
+	RuleParser = NewObject<URuleParser>();
+	SetRuleParser();
 
 	SetActionRuleBlocks();
 
@@ -105,6 +106,8 @@ void APatrolAIController::BeginReacting()
 	FGameplayTag CurrentState = StateMachine->StateTag;
 
 	URuleBlock* TemporaryRuleBlock = NewObject<URuleBlock>();
+	TemporaryRuleBlock->SetAccumulation(Accumulation);
+
 	for (auto& Elem : ActionRuleBlocks)
 	{
 		if (CurrentState.MatchesTag(Elem.Key))
@@ -121,7 +124,7 @@ void APatrolAIController::BeginReacting()
 	FGameplayTag NewActionState = GetTagFromName(ActionName);
 	if (ActionTimings.Contains(NewActionState))
 	{
-		float NewTime = ActionTimings[NewActionState]->GetXFromDegree(ActionDegree)["JustTime"];
+		float NewTime = ActionTimings[NewActionState]->GetXFromDegree(ActionDegree)["Time"];
 		UpdateCharacter(NewActionState, NewTime);
 
 		if (NewActionState.MatchesTag(AgentGameplayTags::TeaState))
@@ -139,7 +142,7 @@ void APatrolAIController::BeginReacting()
 		{
 			if (ControlledAgent->DetectedEnemyIsNear())
 			{
-				UpdateCharacter(AgentGameplayTags::NonTeaState_BattleState_Attack, AttackRate);
+				UpdateCharacter(AgentGameplayTags::NonTeaState_BattleState_Attack, DefaultReactionTime);
 			}
 			else
 			{
@@ -208,8 +211,8 @@ void APatrolAIController::SetThurstVariable()
 	UGaussian* ThurstLow = NewObject<UGaussian>();
 	ThurstLow->Set(
 		"Low",
-		DangerLevel->LowerBound,
-		DangerLevel->UpperBound,
+		Thurst->LowerBound,
+		Thurst->UpperBound,
 		0,
 		65
 	);
@@ -217,24 +220,24 @@ void APatrolAIController::SetThurstVariable()
 	UGaussian* ThurstMid = NewObject<UGaussian>();
 	ThurstMid->Set(
 		"Mid",
-		DangerLevel->LowerBound,
-		DangerLevel->UpperBound,
+		Thurst->LowerBound,
+		Thurst->UpperBound,
 		150,
 		65
 	);
 
 	UGaussian* ThurstHigh = NewObject<UGaussian>();
-	ThurstMid->Set(
+	ThurstHigh->Set(
 		"High",
-		DangerLevel->LowerBound,
-		DangerLevel->UpperBound,
+		Thurst->LowerBound,
+		Thurst->UpperBound,
 		300,
 		65
 	);
 
-	DangerLevel->AddTerm(ThurstLow->Name, ThurstLow, 1);
-	DangerLevel->AddTerm(ThurstMid->Name, ThurstMid, 1);
-	DangerLevel->AddTerm(ThurstHigh->Name, ThurstHigh, 1);
+	Thurst->AddTerm(ThurstLow->Name, ThurstLow, 1);
+	Thurst->AddTerm(ThurstMid->Name, ThurstMid, 1);
+	Thurst->AddTerm(ThurstHigh->Name, ThurstHigh, 1);
 }
 
 void APatrolAIController::SetDangerLevelVariable()
@@ -369,7 +372,7 @@ void APatrolAIController::SetWaitStateDuration()
 
 	ULinear* JustTime = NewObject<ULinear>();
 	JustTime->Set(
-		"JustTime",
+		"Time",
 		WaitStateDuration->LowerBound,
 		WaitStateDuration->UpperBound,
 		WaitStateDuration->LowerBound,
@@ -384,7 +387,7 @@ void APatrolAIController::SetPatrolStateDuration()
 
 	ULinear* JustTime = NewObject<ULinear>();
 	JustTime->Set(
-		"JustTime",
+		"Time",
 		PatrolStateDuration->LowerBound,
 		PatrolStateDuration->UpperBound,
 		PatrolStateDuration->LowerBound,
@@ -399,7 +402,7 @@ void APatrolAIController::SetRushStateDuration()
 
 	ULinear* JustTime = NewObject<ULinear>();
 	JustTime->Set(
-		"JustTime",
+		"Time",
 		RushStateDuration->LowerBound,
 		RushStateDuration->UpperBound,
 		RushStateDuration->LowerBound,

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+
 #include "PatrolAgent.h"
 
 #include "Variable/Variable.h"
@@ -12,10 +13,10 @@
 #include "Aggregation/Aggregation.h"
 #include "Defuzzification/Defuzzification.h"
 #include "Rule/RuleBlock.h"
-#include "Term/Term.h"
 #include "Rule/RuleParser.h"
 
 #include "GameplayTagContainer.h"
+
 #include "PatrolAIController.generated.h"
 
 /**
@@ -33,10 +34,10 @@ public:
 
 	/** Reaction Timer Section */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Timer")
-	float DefaultReactionTime = 0.5; // in sec
+	float DefaultReactionTime = 0.3; // in sec
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Timer")
-	float UnstableReactionTime = 0.5; // in sec
+	float UnstableReactionTime = 0.3; // in sec
 
 	UPROPERTY()
 	FTimerHandle ReactionTimer;
@@ -69,11 +70,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "General")
 	UVariable* Thurst;
 
+	UFUNCTION()
 	void SetThurstVariable();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "General")
 	UVariable* DangerLevel;
 
+	UFUNCTION()
 	void SetDangerLevelVariable();
 
 
@@ -81,6 +84,7 @@ public:
 	UPROPERTY()
 	UVariable* Action;
 
+	UFUNCTION()
 	void SetActionVariable();
 
 
@@ -93,6 +97,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tea Receiving")
 	int32 MaximumTeaReceivingTime = 10;
 
+	UFUNCTION()
 	void SetTeaReceivingDuration();
 
 
@@ -105,6 +110,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tea Receiving")
 	int32 MaximumWaitTime = 5;
 
+	UFUNCTION()
 	void SetWaitStateDuration();
 
 
@@ -117,6 +123,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tea Receiving")
 	int32 MaximumPatrolTime = 10;
 
+	UFUNCTION()
 	void SetPatrolStateDuration();
 
 
@@ -129,11 +136,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Tea Receiving")
 	int32 MaximumRushTime = 7;
 
+	UFUNCTION()
 	void SetRushStateDuration();
-
-
-	/** Attack Section */
-	float AttackRate = 0.5;
 
 	
 	/** Fuzzy Logic Functions Section */
@@ -163,21 +167,26 @@ public:
 	UPROPERTY()
 	URuleParser* RuleParser;
 
+	UFUNCTION()
 	void SetRuleParser();
 
 	UPROPERTY()
 	TMap<FGameplayTag, URuleBlock*> ActionRuleBlocks;
 
+	UFUNCTION()
 	void SetActionRuleBlocks();
 
 	UPROPERTY()
 	TMap<FGameplayTag, UVariable*> ActionTimings;
 
+	UFUNCTION()
 	void SetActionTimings();
 
 	/** Delegate Functions Section */
+	UFUNCTION()
 	void OnAgentMoveEnd();
 
+	UFUNCTION()
 	void OnEnemyDetected();
 
 };
