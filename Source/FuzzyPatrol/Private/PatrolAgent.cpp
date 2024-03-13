@@ -4,6 +4,7 @@
 #include "PatrolAgent.h"
 #include "AgentGameplayTags.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "GameplayTagContainer.h"
 #include "Math/UnrealMathUtility.h"
 #include "Perception/PawnSensingComponent.h"
@@ -18,7 +19,6 @@ APatrolAgent::APatrolAgent()
 
 	StateMachine = CreateDefaultSubobject<UStateMachineComponent>("StateMachine");
 	StateMachine->InitialStateTag = AgentGameplayTags::NonTeaState_NonBattleState_Wait;
-	StateMachine->InitialStateTag;
 	StateMachine->StateHistoryLength = 5;
 	StateMachine->InitStateDelegate.AddUniqueDynamic(this, &APatrolAgent::OnInitState);
 
@@ -32,9 +32,9 @@ APatrolAgent::APatrolAgent()
 	PawnSensing->bOnlySensePlayers = false;
 	PawnSensing->bSeePawns = true;
 
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
+	//bUseControllerRotationPitch = false;
+	//bUseControllerRotationYaw = false;
+	//bUseControllerRotationRoll = false;
 
 	HeadSphere = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeadSphere"));
 	HeadSphere->SetupAttachment(GetMesh());
@@ -76,6 +76,8 @@ void APatrolAgent::BeginPlay()
 	DangerDetector->OnLevelChangedDelegate.AddUniqueDynamic(this,
 		&APatrolAgent::UpdateObservedDangerLevel);
 
+	TargetLocation = GetActorLocation();
+
 }
 
 // Called every frame
@@ -99,16 +101,37 @@ void APatrolAgent::OnInitState(const FGameplayTag& State)
 	if (State.MatchesTag(AgentGameplayTags::TeaState))
 	{
 		DisableDetecting();
+		SetTeaReceiverAsTargetLocation();
 	}
 	else
 	{
 		EnableDetecting();
 	}
 
-	if (State.MatchesTag(AgentGameplayTags::TeaState_Wait))
+	if (State.MatchesTag(AgentGameplayTags::NonTeaState_BattleState))
+	{
+		SetDetectedEnemyAsTarget();
+	}
+	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_NonBattleState))
+	{
+		SetNewPatrolTargetLocation();
+	}
+
+	if (State.ToString().Contains("Wait")
+		|| State.MatchesTag(AgentGameplayTags::NonTeaState_BattleState_Attack))
 	{
 		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, WaitThurstValue);
 		SetSpeed(0);
+		StopMovingTimer();
+	}
+	else
+	{
+		ResetMovingTimer();
+	}
+
+	if (State.MatchesTag(AgentGameplayTags::TeaState_Wait))
+	{
+		// nothing here
 
 	}
 	else if (State.MatchesTag(AgentGameplayTags::TeaState_Rush))
@@ -131,14 +154,12 @@ void APatrolAgent::OnInitState(const FGameplayTag& State)
 	}
 	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_BattleState_Attack))
 	{
-		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, AttackThurstValue);
-		SetSpeed(0);
+		AttackDetectedEnemy();
 
 	}
 	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_NonBattleState_Wait))
 	{
-		ThurstAccumulativeComponent->EnableReceiving(TimeForAccumulation, WaitThurstValue);
-		SetSpeed(0);
+		// nothing is here
 
 	}
 	else if (State.MatchesTag(AgentGameplayTags::NonTeaState_NonBattleState_Patrol))
@@ -211,13 +232,29 @@ void APatrolAgent::RaiseThurst(int32 Value)
 
 void APatrolAgent::SetDetectedEnemy(ADefaultEnemy* Enemy)
 {
+	if (IsValid(CurrentDetectedEnemy))
+	{
+		return;
+	}
+
 	CurrentDetectedEnemy = Enemy;
 
-	if (OnDetectingLevelChangedDelegate.IsBound())
+	if (OnEnemyDetectedDelegate.IsBound())
 	{
-		OnDetectingLevelChangedDelegate.Broadcast(CurrentDetectedEnemy);
+		OnEnemyDetectedDelegate.Broadcast();
 
 	}
+}
+
+bool APatrolAgent::HasDetectedEnemy()
+{
+	if ((CurrentDetectedEnemy != nullptr) && (IsValid(CurrentDetectedEnemy)))
+	{
+		return true;
+	}
+	CurrentDetectedEnemy = nullptr;
+
+	return false;
 }
 
 void APatrolAgent::EnableDetecting()
@@ -231,6 +268,81 @@ void APatrolAgent::DisableDetecting()
 	PawnSensing->SetSensingUpdatesEnabled(false);
 	CurrentDetectedEnemy = nullptr;
 
+}
+
+void APatrolAgent::SetDetectedEnemyAsTarget()
+{
+	if (HasDetectedEnemy())
+	{
+		TargetLocation = CurrentDetectedEnemy->GetActorLocation();
+	}
+}
+
+bool APatrolAgent::DetectedEnemyIsNear()
+{
+	if (!HasDetectedEnemy())
+	{
+		return false;
+	}
+
+	return GetActorLocation().Equals(CurrentDetectedEnemy->GetActorLocation(), AttackRadius);
+}
+
+void APatrolAgent::AttackDetectedEnemy()
+{
+	if (HasDetectedEnemy() && DetectedEnemyIsNear())
+	{
+		CurrentDetectedEnemy->ReceiveDamage(AttackPower);
+	}
+}
+
+bool APatrolAgent::IsNearTargetLocation()
+{
+	const float Epsilon = 10;
+	return GetActorLocation().Equals(TargetLocation, Epsilon);
+}
+
+void APatrolAgent::SetNewPatrolTargetLocation()
+{
+	while (PatrolLocations.Num() > 0)
+	{
+		int32 TargetLocationIndex = UKismetMathLibrary::RandomIntegerInRange(0, PatrolLocations.Num() - 1);
+		TargetLocation = PatrolLocations[TargetLocationIndex];
+
+		if (!IsNearTargetLocation())
+		{
+			break;
+		}
+	}
+}
+
+void APatrolAgent::ResetMovingTimer()
+{
+	GetWorldTimerManager().SetTimer(MovingTimer, this, &APatrolAgent::GoToTargetLocation, MovingCheckRate, true);
+
+}
+
+void APatrolAgent::StopMovingTimer()
+{
+	GetWorldTimerManager().ClearTimer(MovingTimer);
+
+}
+
+void APatrolAgent::MovingDone()
+{
+	if (StateMachine->StateTag.MatchesTag(AgentGameplayTags::NonTeaState_NonBattleState))
+	{
+		SetNewPatrolTargetLocation();
+	}
+	else if (StateMachine->StateTag.MatchesTag(AgentGameplayTags::NonTeaState_BattleState))
+	{
+		SetDetectedEnemyAsTarget();
+	}
+
+	if (OnMoveEndDelegate.IsBound())
+	{
+		OnMoveEndDelegate.Broadcast();
+	}
 }
 
 void APatrolAgent::Die()

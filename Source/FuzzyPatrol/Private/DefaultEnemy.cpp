@@ -117,7 +117,8 @@ void ADefaultEnemy::LowerDangerAsReward()
 void ADefaultEnemy::ReceiveDamage(int32 DamagePoints)
 {
 	CurrentHealth = FMath::Clamp(CurrentHealth - DamagePoints, 0, MaximumHealth);
-	
+	PlayAnimationReceivingDamage();
+
 	if (CurrentHealth == 0)
 	{
 		Die();

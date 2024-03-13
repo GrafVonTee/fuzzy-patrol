@@ -90,6 +90,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Life")
 	void ReceiveDamage(int32 DamagePoints);
 
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Life")
+	void PlayAnimationReceivingDamage();
+
 	UFUNCTION(BlueprintCallable, Category = "Life")
 	void Die();
 

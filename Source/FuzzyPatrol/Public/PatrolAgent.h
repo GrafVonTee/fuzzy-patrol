@@ -11,8 +11,9 @@
 #include "PatrolAgent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThurstLevelChangedSignature, int32, CurrentThurstLevel);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDetectingLevelChangedSignature, ADefaultEnemy*, DetectedEnemy);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDetectedSignature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMoveEndSignature);
 
 UCLASS()
 class FUZZYPATROL_API APatrolAgent : public ACharacter
@@ -69,8 +70,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Thurst")
 	int32 CurrentThurstLevel = 0;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Thurst")
-	int32 MaximumThurstLevel = 150;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Thurst")
+	int32 MaximumThurstLevel = 300;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Thurst")
 	int32 WaitThurstValue = 0;
@@ -90,13 +91,40 @@ public:
 
 	/** Enemy Detecting Level Section */
 	UPROPERTY(BlueprintAssignable)
-	FOnDetectingLevelChangedSignature OnDetectingLevelChangedDelegate;
+	FOnEnemyDetectedSignature OnEnemyDetectedDelegate;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy Detecting")
 	class ADefaultEnemy* CurrentDetectedEnemy;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy Detecting")
 	class UPawnSensingComponent* PawnSensing;
+
+
+	/** Attack Section */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	int32 AttackPower = 3;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	float AttackRadius = 30.0f;
+
+
+	/** Patrol Section */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Patrol")
+	TArray<FVector> PatrolLocations;
+
+
+	/** Moving Section */
+	UPROPERTY(BlueprintAssignable)
+	FOnMoveEndSignature OnMoveEndDelegate;
+
+	UPROPERTY()
+	FTimerHandle MovingTimer;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Moving")
+	float MovingCheckRate = 0.5;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Moving")
+	FVector TargetLocation;
 
 	
 	/** Death Section */
@@ -141,12 +169,53 @@ public:
 	/** Enemy Detecting Section */
 	UFUNCTION(BlueprintCallable, Category = "Enemy Detecting")
 	void SetDetectedEnemy(ADefaultEnemy* Enemy);
+
+	UFUNCTION(BlueprintCallable, Category = "Enemy Detecting")
+	bool HasDetectedEnemy();
 	
 	UFUNCTION(BlueprintCallable, Category = "Enemy Detecting")
 	void EnableDetecting();
 	
 	UFUNCTION(BlueprintCallable, Category = "Enemy Detecting")
 	void DisableDetecting();
+
+	UFUNCTION(BlueprintCallable, Category = "Enemy Detecting")
+	void SetDetectedEnemyAsTarget();
+
+
+	/** Enemy Attack */
+	UFUNCTION(BlueprintCallable, Category = "Attack")
+	bool DetectedEnemyIsNear();
+
+	UFUNCTION(BlueprintCallable, Category = "Attack")
+	void AttackDetectedEnemy();
+
+
+	/** Patrol Section */
+	UFUNCTION(BlueprintCallable, Category = "Patrol")
+	bool IsNearTargetLocation();
+
+	UFUNCTION(BlueprintCallable, Category = "Patrol")
+	void SetNewPatrolTargetLocation();
+
+
+	/** Moving Section */
+	UFUNCTION(BlueprintCallable, Category = "Moving")
+	void ResetMovingTimer();
+
+	UFUNCTION(BlueprintCallable, Category = "Moving")
+	void StopMovingTimer();
+
+	UFUNCTION(BlueprintCallable, BLueprintImplementableEvent, Category = "Moving")
+	void GoToTargetLocation();
+
+	UFUNCTION(BlueprintCallable, Category = "Moving")
+	void MovingDone();
+
+
+	/** Tea Receiving Section */
+	UFUNCTION(BlueprintCallable, BLueprintImplementableEvent, Category = "Tea")
+	void SetTeaReceiverAsTargetLocation();
 
 
 	/** Just die lol */
