@@ -12,7 +12,7 @@ Controls:
 This project requires plugin FuzzyLib from [https://github.com/GrafVonTee/fuzzy-lib](here).
 - In this project change directory to Plugins/
 - Create Folder "FuzzyLib" in there
-- Download source code in zip format
+- Download source code
 - Unzip content into the "Plugins/FuzzyLib"
 - In the root directory of the project RMB on the .uproject file and press "Generate Visual Studio project files"
 - Done!
