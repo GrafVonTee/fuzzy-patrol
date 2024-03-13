@@ -9,7 +9,7 @@ Controls:
 
 !!!ATTENTION!!!
 
-This project requires plugin FuzzyLib from [https://github.com/GrafVonTee/fuzzy-lib](here).
+This project requires plugin FuzzyLib from [here](https://github.com/GrafVonTee/fuzzy-lib).
 - In this project change directory to Plugins/
 - Create Folder "FuzzyLib" in there
 - Download source code
