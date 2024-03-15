@@ -224,7 +224,7 @@ void APatrolAgent::RaiseThurst(int32 Value)
 
 	}
 
-	if (CurrentThurstLevel == MaximumThurstLevel)
+	if (CurrentThurstLevel >= MaximumThurstLevel)
 	{
 		Die();
 
